@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PHP 基礎入門</title>
+<style>
+:root{--bg:#10151f;--panel:#182030;--fg:#e8edf5;--muted:#9aa7bd;--accent:#8892ff;--accent2:#ffcf6b;--ok:#6ee7a8;--code-bg:#0b0f17;--border:#2a3550}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+#deck{position:fixed;inset:0}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;padding:clamp(16px,3.5vh,40px) clamp(16px,5vw,72px) 64px;overflow-y:auto}
+.slide.active{display:flex}
+h1{font-size:clamp(28px,6vw,64px);margin:0 0 .3em}
+h2{font-size:clamp(22px,3.6vw,40px);margin:0 0 .2em;color:var(--fg)}
+.point{font-size:clamp(15px,2vw,24px);color:var(--accent2);margin:0 0 .6em}
+.cols{display:grid;grid-template-columns:1.15fr 1fr;gap:clamp(12px,2.5vw,32px);align-items:start;flex:1}
+@media (max-width:820px){.cols{grid-template-columns:1fr}}
+ul{margin:0;padding-left:1.2em;font-size:clamp(14px,1.8vw,22px);line-height:1.6}
+li{margin-bottom:.25em}
+code{font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;background:#232d44;padding:0 .3em;border-radius:4px;font-size:.92em}
+pre{font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;margin:0;white-space:pre-wrap;word-break:break-word}
+pre.code{background:var(--code-bg);border:1px solid var(--border);border-radius:8px 8px 0 0;padding:.8em 1em;font-size:clamp(12px,1.3vw,18px);line-height:1.42;color:#d6e2ff}
+pre.output{background:#0d1a14;border:1px solid var(--border);border-top:0;border-radius:0 0 8px 8px;padding:.6em 1em;font-size:clamp(12px,1.25vw,17px);line-height:1.4;color:var(--ok)}
+pre.output::before{content:"輸出";display:block;color:var(--muted);font-size:.75em;margin-bottom:.2em}
+mark,.hl{background:rgba(255,207,107,.25);color:var(--accent2);padding:0 2px;border-radius:3px}
+.src{margin-top:auto;padding-top:10px;padding-right:150px;font-size:clamp(11px,1.2vw,15px);color:var(--muted)}
+#pager{position:fixed;right:16px;bottom:12px;display:flex;gap:8px;align-items:center;font-size:16px;color:var(--muted);z-index:10}
+#pager button{background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:2px 10px;font-size:16px;cursor:pointer}
+#pager span{min-width:4.5em;text-align:center}
+.cover{justify-content:center}
+.cover p{font-size:clamp(16px,2.4vw,28px);color:var(--muted)}
+table.pit{border-collapse:collapse;width:100%;font-size:clamp(12px,1.55vw,19px)}
+table.pit td{border-bottom:1px solid var(--border);padding:.35em .5em;vertical-align:top}
+table.pit td:first-child{color:var(--accent2);white-space:nowrap}
+details{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:.5em .9em;margin-bottom:.7em;font-size:clamp(14px,1.8vw,22px)}
+summary{cursor:pointer}
+details p{margin:.4em 0 0;color:var(--ok)}
+</style>
+</head>
+<body>
+<main id="deck">
+
+<section class="slide cover" data-kind="title" data-concepts="">
+<h1>PHP 基礎入門</h1>
+<p>給寫過 Python、C、JavaScript，但沒碰過 PHP 的人</p>
+<p>重點：PHP 和其他語言「不一樣」的地方</p>
+<p>內容全部來自 LLM Wiki（PHP 官方手冊 S1–S5），範例輸出為 PHP 8.3.6 實測</p>
+<footer class="src">按 → 或空白鍵下一頁，← 上一頁</footer>
+</section>
+
+<section class="slide" data-kind="title" data-concepts="">
+<h2>學習目標</h2>
+<ul>
+<li>看懂 <code>&lt;?php ... ?&gt;</code> 標記，以及 <code>?&gt;</code> 後的換行不會輸出的行為</li>
+<li>知道 PHP 是動態型別，以及哪些值轉成 bool 是 false</li>
+<li>分辨整數、浮點數、字串、陣列和其他語言不同的地方</li>
+<li>搞懂變數的傳值／引用、函式作用域，以及常數的寫法</li>
+<li>記住 8 個最容易踩的陷阱</li>
+</ul>
+<footer class="src">出處：本簡報各頁（內容頁皆標示出處 ID）</footer>
+</section>
+
+<section class="slide" data-kind="content" data-concepts="php-tags">
+<h2>PHP 標記</h2>
+<p class="point">只有 <code>&lt;?php</code> 和 <code>?&gt;</code> 之間的程式碼會被執行，標籤外的內容會被忽略。</p>
+<div class="cols">
+<div>
+<pre class="code">&lt;?php
+echo "Hello world\n";
+
+// 腳本在這裡結束，沒有寫 PHP 結束標籤
+</pre>
+<pre class="output">Hello world</pre>
+</div>
+<ul>
+<li><mark><code>&lt;?php</code></mark> 後面必須接空白字元（空格、tab 或換行）[S1.1]</li>
+<li><code>&lt;?=</code> 是 <code>&lt;?php echo</code> 的簡寫 [S1.1]</li>
+<li>短標籤 <code>&lt;?</code> 可能被停用，建議用 <code>&lt;?php ?&gt;</code> 和 <code>&lt;?= ?&gt;</code> [S1.1]</li>
+<li>純 PHP 檔最好刪掉結尾的 <code>?&gt;</code>，避免多出空白或換行 [S1.1]</li>
+</ul>
+</div>
+<footer class="src">出處：[S1.1][S1.3]</footer>
+</section>
+
+<section class="slide" data-kind="content" data-concepts="html-embedding,statement-separation,comments">
+<h2><code>?&gt;</code> 的副作用</h2>
+<p class="point"><code>?&gt;</code> 隱含一個分號，而且緊接著的那一個換行不會輸出。</p>
+<div class="cols">
+<div>
+<pre class="code">&lt;?php echo "Some text"; <mark>?&gt;</mark>
+No newline
+&lt;?= "But newline now" ?&gt;
+</pre>
+<pre class="output">Some textNo newline
+But newline now</pre>
+</div>
+<ul>
+<li>標籤外的內容會原樣輸出，但緊接在 <code>?&gt;</code> 後的換行不會輸出，所以 <code>Some text</code> 和 <code>No newline</code> 黏在一起 [S1.2][S1.3]</li>
+<li>每個語句用分號結束；程式碼段最後一行可以省略分號 [S1.3]</li>
+<li>註解有 <code>//</code>、<code>#</code>、<code>/* */</code> 三種 [S1.4]</li>
+<li>單行註解遇到 <code>?&gt;</code> 就結束，後面的 HTML 會被輸出 [S1.4]</li>
+</ul>
+</div>
+<footer class="src">出處：[S1.2][S1.3][S1.4]</footer>
+</section>
+
+<section class="slide" data-kind="content" data-concepts="type-system">
+<h2>動態型別</h2>
+<p class="point">變數不用宣告型別，型別由目前存放的值決定。</p>
+<div class="cols">
+<div>
+<pre class="code">&lt;?php
+$v = "foo";
+echo get_debug_type($v), "\n";
+<mark>$v = 12;</mark>
+echo get_debug_type($v), "\n";
+var_dump(is_int($v));
+</pre>
+<pre class="output">string
+int
+bool(true)</pre>
+</div>
+<ul>
+<li>內建型別：null、bool、int、float、string、array、object、callable、resource [S2.1]</li>
+<li>同一個變數先放 string 再放 int，型別會跟著變，不會報錯 [S2.9]</li>
+<li><code>var_dump()</code> 看值和型別，<code>get_debug_type()</code> 取得型別，<code>is_int()</code> 這類函式檢查型別 [S2.1]</li>
+</ul>
+</div>
+<footer class="src">出處：[S2.1][S2.9]</footer>
+</section>
+
+<section class="slide" data-kind="content" data-concepts="truthy-falsy">
+<h2>真假值</h2>
+<p class="point">轉成 bool 時是 false 的值只有少數幾個，其中 <code>"0"</code> 要特別小心。</p>
+<div class="cols">
+<div>
+<pre class="code">&lt;?php
+var_dump((bool) <mark>"0"</mark>);
+var_dump((bool) "false");
+var_dump((bool) -1);
+var_dump((bool) array());
+var_dump((bool) array(12));
+</pre>
+<pre class="output">bool(false)
+bool(true)
+bool(true)
+bool(false)
+bool(true)</pre>
+</div>
+<ul>
+<li>false 的值：<code>false</code>、<code>0</code>、<code>0.0</code>、<code>""</code>、<code>"0"</code>、空陣列、null [S2.4]</li>
+<li>其他所有值都是 true，包括 <code>-1</code> 和 <code>"false"</code> [S2.4]</li>
+<li>所以 <code>if ($x == TRUE)</code> 不必要，直接寫 <code>if ($x)</code> [S2.4]</li>
+</ul>
+</div>
+<footer class="src">出處：[S2.4]</footer>
+</section>
+
+<section class="slide" data-kind="content" data-concepts="integer,float">
+<h2>整數與浮點數</h2>
+<p class="point">八進位前綴是 <code>0</code>、溢位會變 float、沒有整數除法運算子。</p>
+<div class="cols">
+<div>
+<pre class="code">&lt;?php
+var_dump(<mark>0123</mark>);
+var_dump(PHP_INT_MAX + 1);
+var_dump(25/7);
+var_dump(intdiv(25, 7));
+var_dump(floor((0.1+0.7)*10));
+</pre>
+<pre class="output">int(83)
+float(9.223372036854776E+18)
+float(3.5714285714285716)
+int(3)
+float(7)</pre>
+</div>
+<ul>
+<li><code>0123</code> 是八進位的 83，不是 123 [S2.5]</li>
+<li>超出 int 範圍會變成 float；PHP 不支援無號 int [S2.5]</li>
+<li>沒有整數除法運算子，要用 <code>intdiv()</code> [S2.5]</li>
+<li>float 有精度問題，<code>floor((0.1+0.7)*10)</code> 是 7 不是 8；比較時用 epsilon [S2.6]</li>
+</ul>
+</div>
+<footer class="src">出處：[S2.5][S2.6]</footer>
+</section>
+
+<section class="slide" data-kind="content" data-concepts="strings,string-interpolation">
+<h2>字串</h2>
+<p class="point">單引號不插值、雙引號才插值；連接字串用 <code>.</code>，不是 <code>+</code>。</p>
+<div class="cols">
+<div>
+<pre class="code">&lt;?php
+$name = 'PHP';
+$arr = ['fruit' =&gt; 'banana'];
+echo 'Hello $name\n', PHP_EOL;
+echo "Hello $name\n";
+echo "1" + "1", PHP_EOL;
+echo "1" <mark>.</mark> "1", PHP_EOL;
+echo "This works: {$arr['fruit']}", PHP_EOL;
+</pre>
+<pre class="output">Hello $name\n
+Hello PHP
+2
+11
+This works: banana</pre>
+</div>
+<ul>
+<li>單引號只處理 <code>\'</code> 和 <code>\\</code>，<code>\n</code> 和變數都不會被代入 [S2.7]</li>
+<li>字串是位元組陣列，<code>$str[0]</code> 依位元組存取，對多位元組字元集不安全 [S2.7]</li>
+<li>帶引號的鍵要用 <code>{$arr['fruit']}</code>；<code>"$arr['fruit']"</code> 是解析錯誤 [S2.8]</li>
+<li>多行文字可用 heredoc（<code>&lt;&lt;&lt;EOT</code>）和 nowdoc [S2.7]</li>
+</ul>
+</div>
+<footer class="src">出處：[S2.7][S2.8]</footer>
+</section>
+
+<section class="slide" data-kind="content" data-concepts="arrays">
+<h2>陣列</h2>
+<p class="point">PHP 的 array 其實是有序映射，可以當 list、字典、堆疊、佇列用。</p>
+<div class="cols">
+<div>
+<pre class="code">&lt;?php
+$a = array(1 =&gt; 'one', 2 =&gt; 'two', 3 =&gt; 'three');
+<mark>unset($a[2]);</mark>
+$a[] = 'four';
+print_r($a);
+$arr1 = array(2, 3);
+$arr2 = $arr1;
+$arr2[] = 4;
+echo count($arr1), " ", count($arr2), PHP_EOL;
+</pre>
+<pre class="output">Array
+(
+    [1] =&gt; one
+    [3] =&gt; three
+    [4] =&gt; four
+)
+2 3</pre>
+</div>
+<ul>
+<li>key 可以是 int 或 string，同一個 array 可以混用 [S2.8]</li>
+<li><code>$arr[] = value</code> 附加；沒指定 key 時用最大 int key 加 1 [S2.8]</li>
+<li><code>unset()</code> 不重建索引，需要的話用 <code>array_values()</code> [S2.8]</li>
+<li>array 的指派會複製值，要共用要用 <code>&amp;</code> [S2.8]</li>
+</ul>
+</div>
+<footer class="src">出處：[S2.8]</footer>
+</section>
+
+<section class="slide" data-kind="content" data-concepts="type-juggling,expressions">
+<h2>型別轉換與比較</h2>
+<p class="point">PHP 依「上下文」自動轉型；比較要分清楚 <code>==</code> 和 <code>===</code>。</p>
+<div class="cols">
+<div>
+<pre class="code">&lt;?php
+var_dump("5" + 3);
+var_dump(5 + 1.5);
+var_dump(5 . 3);
+var_dump(1 == "1", <mark>1 === "1"</mark>);
+</pre>
+<pre class="output">int(8)
+float(6.5)
+string(2) "53"
+bool(true)
+bool(false)</pre>
+</div>
+<ul>
+<li>上下文有：數字、字串、邏輯、整數和字串、比較、函式 [S2.9]</li>
+<li>算術有 float 運算元時結果是 float，否則是 int [S2.9]</li>
+<li>強制轉型寫 <code>(int)</code>、<code>(string)</code> 等，僅影響這次運算，變數型別不變 [S2.9]</li>
+<li><code>==</code> 只比較值；<code>===</code> 值和型別都要相同 [S5.1]</li>
+</ul>
+</div>
+<footer class="src">出處：[S2.9][S5.1]</footer>
+</section>
+
+<section class="slide" data-kind="content" data-concepts="variables">
+<h2>變數：傳值與引用</h2>
+<p class="point">變數以 <code>$</code> 開頭、名稱區分大小寫；指派預設是複製值，加 <code>&amp;</code> 就變成引用。</p>
+<div class="cols">
+<div>
+<pre class="code">&lt;?php
+$var = 'Bob';
+$Var = 'Joe';
+echo "$var, $Var", PHP_EOL;
+
+$foo = 'Bob';
+$bar = $foo;
+$bar = 'Alice';
+echo $foo, PHP_EOL;
+$ref = <mark>&amp;$foo</mark>;
+$ref = "My name is $ref";
+echo $foo, PHP_EOL;
+</pre>
+<pre class="output">Bob, Joe
+Bob
+My name is Bob</pre>
+</div>
+<ul>
+<li><code>$var</code> 和 <code>$Var</code> 是兩個不同的變數 [S3.1]</li>
+<li>名稱以字母或底線開頭，<code>$4site</code> 是非法的 [S3.1]</li>
+<li>引用讓新變數成為別名，改任一個都會影響另一個 [S3.1]</li>
+<li>存取未定義的變數只會發出 <code>E_WARNING</code> 並得到 <code>null</code> [S3.1]</li>
+</ul>
+</div>
+<footer class="src">出處：[S3.1]</footer>
+</section>
+
+<section class="slide" data-kind="content" data-concepts="variable-scope,superglobals">
+<h2>作用域</h2>
+<p class="point">和 C 不同：函式裡看不到外面的全域變數，要用 <code>global</code> 宣告。</p>
+<div class="cols">
+<div>
+<pre class="code">&lt;?php
+$a = 1;
+function bad() { echo $a; }
+bad();
+function good() { <mark>global $a;</mark> echo $a, PHP_EOL; }
+good();
+</pre>
+<pre class="output">Warning: Undefined variable $a in example.php on line 3
+1</pre>
+</div>
+<ul>
+<li>只有函式作用域和全域作用域 [S3.2]</li>
+<li>在函式裡直接用全域變數，會被當成未定義的區域變數 [S3.2]</li>
+<li>也可以用 <code>$GLOBALS['a']</code> 存取全域變數 [S3.2]</li>
+<li>超全域變數（例如 <code>$_POST</code>）在每個作用域自動可用 [S3.2][S3.4]</li>
+<li><code>static</code> 變數離開函式時值不會遺失 [S3.2]</li>
+</ul>
+</div>
+<footer class="src">出處：[S3.2][S3.4]</footer>
+</section>
+
+<section class="slide" data-kind="content" data-concepts="constants,magic-constants">
+<h2>常數</h2>
+<p class="point">用 <code>const</code> 或 <code>define()</code> 定義，使用時不加 <code>$</code>。</p>
+<div class="cols">
+<div>
+<pre class="code">&lt;?php
+const GREETING = 'Hello World';
+define('ANIMALS', array('dog', 'cat', 'bird'));
+
+function show() { echo GREETING, " / ", ANIMALS[1], PHP_EOL; }
+show();
+try { echo <mark>Greeting</mark>; }
+catch (Error $e) { echo get_class($e), ': ', $e-&gt;getMessage(), PHP_EOL; }
+</pre>
+<pre class="output">Hello World / cat
+Error: Undefined constant "Greeting"</pre>
+</div>
+<ul>
+<li>常數在任何作用域都能存取，定義後不能修改或取消 [S4.1]</li>
+<li><code>const</code> 不能用在函式、迴圈、<code>if</code> 裡，這時改用 <code>define()</code> [S4.1]</li>
+<li>名稱區分大小寫；使用未定義的常數會丟出 Error [S4.1]</li>
+<li>魔術常數如 <code>__LINE__</code>、<code>__FILE__</code>、<code>__DIR__</code> 的值依使用位置而變 [S4.2]</li>
+</ul>
+</div>
+<footer class="src">出處：[S4.1][S4.2]</footer>
+</section>
+
+<section class="slide" data-kind="content" data-concepts="truthy-falsy,strings,integer,float,arrays,statement-separation,variable-scope,constants">
+<h2>常見陷阱總整理</h2>
+<p class="point">八個「換成 PHP 就會踩」的地方。</p>
+<table class="pit">
+<tr><td>真假值</td><td><code>"0"</code> 是 false，<code>"false"</code> 是 true [S2.4]</td></tr>
+<tr><td>字串連接</td><td>用 <code>.</code>，<code>+</code> 沒有這個功能 [S2.7]</td></tr>
+<tr><td>八進位</td><td><code>0123</code> 是 83，不是 123 [S2.5]</td></tr>
+<tr><td>浮點數</td><td>不要直接比較相等，用 epsilon [S2.6]</td></tr>
+<tr><td>陣列</td><td><code>unset()</code> 不重建索引；指派會複製 [S2.8]</td></tr>
+<tr><td>結束標籤</td><td><code>?&gt;</code> 後的換行不會輸出 [S1.3]</td></tr>
+<tr><td>作用域</td><td>函式看不到全域變數，要 <code>global</code> [S3.2]</td></tr>
+<tr><td>常數</td><td><code>const</code> 不能放在函式或 <code>if</code> 裡 [S4.1]</td></tr>
+</table>
+<footer class="src">出處：[S2.4][S2.7][S2.5][S2.6][S2.8][S1.3][S3.2][S4.1]</footer>
+</section>
+
+<section class="slide" data-kind="content" data-concepts="truthy-falsy,strings,variable-scope">
+<h2>小測驗</h2>
+<p class="point">先想一想，再點開看答案。</p>
+<details><summary>Q1：<code>var_dump((bool) "0");</code> 會印出什麼？</summary><p>bool(false)，字串 <code>"0"</code> 轉成 bool 是 false [S2.4]</p></details>
+<details><summary>Q2：<code>echo "1" + "1";</code> 和 <code>echo "1" . "1";</code> 各印出什麼？</summary><p>2 和 11；<code>+</code> 是算術，<code>.</code> 是字串連接 [S2.7]</p></details>
+<details><summary>Q3：函式裡直接 <code>echo $a;</code>（<code>$a</code> 定義在函式外）會怎樣？</summary><p>得到未定義變數的警告，結果是 null；要先宣告 <code>global $a;</code> [S3.2]</p></details>
+<footer class="src">出處：[S2.4][S2.7][S3.2]</footer>
+</section>
+
+<section class="slide" data-kind="title" data-concepts="">
+<h2>出處</h2>
+<ul>
+<li>S1 基本語法：language.basic-syntax（S1.1–S1.4）</li>
+<li>S2 類型：language.types（S2.1–S2.9）</li>
+<li>S3 變數：language.variables（S3.1–S3.4）</li>
+<li>S4 常數：language.constants（S4.1–S4.2）</li>
+<li>S5 表達式：language.expressions（S5.1）</li>
+</ul>
+<p class="point">以上皆為 PHP 官方手冊（php.net/manual/zh），經 LLM Wiki 整理；範例輸出為 PHP 8.3.6 實測。</p>
+<footer class="src">出處：S1–S5 全部</footer>
+</section>
+
+</main>
+<div id="pager"><button id="prev" aria-label="上一頁">←</button><span id="num">1 / 1</span><button id="next" aria-label="下一頁">→</button></div>
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var cur=0;
+  function show(i){
+    cur=Math.max(0,Math.min(slides.length-1,i));
+    slides.forEach(function(s,k){s.classList.toggle('active',k===cur);});
+    document.getElementById('num').textContent=(cur+1)+' / '+slides.length;
+    slides[cur].scrollTop=0;
+    try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+  }
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();show(cur+1);}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();show(cur-1);}
+    else if(e.key==='Home'){show(0);}
+    else if(e.key==='End'){show(slides.length-1);}
+  });
+  document.getElementById('prev').onclick=function(){show(cur-1);};
+  document.getElementById('next').onclick=function(){show(cur+1);};
+  var x0=null;
+  document.addEventListener('touchstart',function(e){x0=e.touches[0].clientX;},{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(x0===null)return;var dx=e.changedTouches[0].clientX-x0;x0=null;
+    if(Math.abs(dx)>50)show(cur+(dx<0?1:-1));
+  });
+  var h=parseInt((location.hash||'').slice(1),10);
+  show(isNaN(h)?0:h-1);
+})();
+</script>
+</body>
+</html>
